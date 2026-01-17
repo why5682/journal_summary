@@ -1,26 +1,37 @@
-# Byte-compiled / optimized / DLL files
+# ========================================
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Virtual environments
+*.so
+.Python
 venv/
 env/
 .venv/
 
-# IDE
-.vscode/
-.idea/
-
-# Database
+# ========================================
+# Database and logs
 *.db
+*.log
 
-# Streamlit
+# ========================================
+# Secrets (NEVER commit!)
+.env
 .streamlit/secrets.toml
 
+# ========================================
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Logs
-*.log
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary
+*.tmp
+temp/
+tmp/

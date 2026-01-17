@@ -1,63 +1,58 @@
-# Medical Literature Summarizer
+# 📊 Medical Literature Trend Analyzer
 
-AI-powered medical paper summarization tool using Streamlit and Ollama Cloud.
+AI-powered tool to analyze research trends from top medical journals.
 
-## Features
+## 🌟 Features
 
-- 📰 **Multi-Journal Support** - Fetch papers from top medical journals
-- 🤖 **AI Summarization** - Concise summaries using Ollama Cloud
-- 🔄 **Duplicate Detection** - Skip already processed papers
-- 📥 **Export Reports** - Download summaries as Markdown
+- 📰 **Multi-Journal Support** - Fetch from 7 major journals
+- 🔬 **AI Trend Analysis** - Identify research patterns using Ollama Cloud
+- 🌐 **HTML Export** - Beautiful, accessible reports
+- 📄 **Markdown Export** - Developer-friendly format
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 2. Configure API Key
-
-Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and add your API key:
-
-```toml
+```bash
+# .streamlit/secrets.toml
 OLLAMA_API_KEY = "your_api_key_here"
 OLLAMA_MODEL = "gptoss-120b:cloud"
 ```
 
-Get your API key from: https://ollama.com/settings/keys
-
-### 3. Run the App
-
+### 3. Run
 ```bash
 streamlit run app.py
 ```
 
-## Supported Journals
+## 📚 Supported Journals
 
-### Pharmacoepidemiology
-- Pharmacoepidemiology and Drug Safety
-- Drug Safety
+| Category | Journals |
+|----------|----------|
+| **Pharmacoepidemiology** | PDS, Drug Safety |
+| **Clinical Pharmacology** | CPT, BJCP |
+| **General Medical** | NEJM, Lancet, JAMA |
 
-### Clinical Pharmacology
-- Clinical Pharmacology & Therapeutics
-- British Journal of Clinical Pharmacology
-
-### General Medical
-- NEJM, The Lancet, JAMA, The BMJ, Annals of Internal Medicine
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 medical_summarizer/
-├── app.py              # Streamlit main app
+├── app.py              # Streamlit app
 ├── core/
-│   ├── collector.py    # RSS feed collection
-│   ├── summarizer.py   # Ollama Cloud integration
-│   └── storage.py      # SQLite duplicate tracking
+│   ├── collector.py    # RSS collection
+│   ├── trend_analyzer.py  # AI analysis
+│   └── storage.py      # SQLite storage
 ├── config/
 │   └── journals.py     # Journal definitions
-└── .streamlit/
-    └── secrets.toml    # API configuration
+└── requirements.txt
 ```
+
+## 🔐 Deployment
+
+1. Push to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Deploy from repo
+4. Add secrets in Settings → Secrets

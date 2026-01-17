@@ -1,11 +1,12 @@
 """
-Medical Literature Summarizer
+Medical Literature Trend Analyzer
 Streamlit app for AI-powered trend analysis of medical research.
 """
 import streamlit as st
 from datetime import datetime
 import os
 import sys
+import base64
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,11 +17,8 @@ from config import JOURNALS, get_journals_by_category, get_journal_names
 # ========================================
 # Streamlit Secrets Configuration
 # ========================================
-# Set these in Streamlit Cloud → Settings → Secrets:
-#
 # OLLAMA_API_KEY = "your_ollama_cloud_api_key"
 # OLLAMA_MODEL = "gptoss-120b:cloud"
-#
 # Get your API key from: https://ollama.com/settings/keys
 # ========================================
 
@@ -37,6 +35,159 @@ def get_secret(key: str, default: str = "") -> str:
         return st.secrets.get(key, os.getenv(key, default))
     except Exception:
         return os.getenv(key, default)
+
+
+def generate_html_report(journals_data, trend_analysis, journal_names):
+    """Generate HTML report for download."""
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Literature Trend Report</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f8f9fa;
+        }}
+        .header {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            margin-bottom: 30px;
+            text-align: center;
+        }}
+        .header h1 {{ font-size: 2em; margin-bottom: 10px; }}
+        .meta {{ color: rgba(255,255,255,0.9); font-size: 0.95em; }}
+        .section {{ 
+            background: white; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }}
+        .section h2 {{ 
+            color: #667eea; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+        }}
+        .trend-analysis {{ 
+            background: #f0f4ff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border-left: 4px solid #667eea;
+        }}
+        .trend-analysis h3 {{ color: #4a5568; margin-top: 15px; margin-bottom: 8px; }}
+        .journal {{ margin-bottom: 25px; }}
+        .journal-title {{ 
+            font-size: 1.2em; 
+            color: #2d3748; 
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .paper {{ 
+            border: 1px solid #e2e8f0; 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            border-radius: 8px;
+            transition: box-shadow 0.2s;
+        }}
+        .paper:hover {{ box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
+        .paper-title {{ 
+            font-weight: 600; 
+            color: #2d3748; 
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }}
+        .paper-title a {{ color: #667eea; text-decoration: none; }}
+        .paper-title a:hover {{ text-decoration: underline; }}
+        .paper-meta {{ color: #718096; font-size: 0.9em; margin-bottom: 10px; }}
+        .paper-abstract {{ 
+            font-size: 0.95em; 
+            color: #4a5568; 
+            background: #f7fafc; 
+            padding: 12px;
+            border-radius: 6px;
+        }}
+        .footer {{ 
+            text-align: center; 
+            color: #a0aec0; 
+            padding: 20px;
+            font-size: 0.9em;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Medical Literature Trend Report</h1>
+        <div class="meta">
+            <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p><strong>Journals:</strong> {', '.join(journal_names)}</p>
+        </div>
+    </div>
+"""
+    
+    # Trend Analysis Section
+    if trend_analysis:
+        # Convert markdown-style formatting to HTML
+        trend_html = trend_analysis.replace('### ', '<h3>').replace('\n\n', '</p><p>')
+        trend_html = trend_html.replace('**', '<strong>').replace('**', '</strong>')
+        trend_html = f"<p>{trend_html}</p>"
+        
+        html += f"""
+    <div class="section">
+        <h2>🔬 AI Trend Analysis</h2>
+        <div class="trend-analysis">
+            {trend_html}
+        </div>
+    </div>
+"""
+    
+    # Papers Section
+    total_papers = sum(len(papers) for papers in journals_data.values())
+    html += f"""
+    <div class="section">
+        <h2>📚 Recent Papers ({total_papers} total)</h2>
+"""
+    
+    for journal_name, papers in journals_data.items():
+        html += f"""
+        <div class="journal">
+            <div class="journal-title">📖 {journal_name} ({len(papers)} papers)</div>
+"""
+        for i, paper in enumerate(papers, 1):
+            abstract = paper.get('abstract', '')[:400]
+            if len(paper.get('abstract', '')) > 400:
+                abstract += '...'
+            
+            html += f"""
+            <div class="paper">
+                <div class="paper-title">{i}. <a href="{paper['link']}" target="_blank">{paper['title']}</a></div>
+                <div class="paper-meta">📅 {paper.get('published', 'Unknown date')}</div>
+                <div class="paper-abstract">{abstract}</div>
+            </div>
+"""
+        html += "        </div>\n"
+    
+    html += """
+    </div>
+    <div class="footer">
+        <p>Generated by Medical Literature Trend Analyzer</p>
+    </div>
+</body>
+</html>"""
+    
+    return html
 
 
 def main():
@@ -131,7 +282,7 @@ def main():
             
             if not all_papers:
                 status.update(label="No papers found", state="error")
-                st.error("No papers found. Try a different time period.")
+                st.error("No papers found. Try a different time period or check journal availability.")
                 st.stop()
             
             status.update(label=f"✅ Fetched {len(all_papers)} papers!", state="complete", expanded=False)
@@ -174,11 +325,10 @@ def main():
                         st.markdown(f"**{i}. [{paper['title']}]({paper['link']})**")
                         st.caption(f"📅 {paper.get('published', 'Unknown date')}")
                         
-                        # Show abstract in a smaller text
+                        # Show abstract
                         abstract = paper.get('abstract', '')
                         if abstract and abstract != "No abstract available":
-                            with st.container():
-                                st.markdown(f"<small>{abstract[:300]}...</small>", unsafe_allow_html=True)
+                            st.markdown(f"<small>{abstract[:300]}...</small>", unsafe_allow_html=True)
                         st.divider()
         
         with col2:
@@ -198,68 +348,49 @@ def main():
         col_dl1, col_dl2 = st.columns(2)
         
         with col_dl1:
-            # Download paper list
-            paper_md = generate_paper_list_markdown(journals_data)
+            # Download HTML Report
+            html_report = generate_html_report(
+                journals_data, 
+                st.session_state.get('trend_analysis', ''),
+                st.session_state.get('selected_journals', [])
+            )
             st.download_button(
-                label="📄 Paper List (Markdown)",
-                data=paper_md,
-                file_name=f"papers_{datetime.now().strftime('%Y%m%d')}.md",
-                mime="text/markdown",
+                label="🌐 Download HTML Report",
+                data=html_report,
+                file_name=f"trend_report_{datetime.now().strftime('%Y%m%d')}.html",
+                mime="text/html",
                 use_container_width=True
             )
         
         with col_dl2:
-            # Download full report with trend analysis
+            # Download Markdown (for developers)
             if st.session_state.get('trend_analysis'):
-                full_md = generate_full_report(
+                md_report = generate_markdown_report(
                     journals_data, 
                     st.session_state['trend_analysis'],
                     st.session_state.get('selected_journals', [])
                 )
                 st.download_button(
-                    label="📊 Full Report with Trends",
-                    data=full_md,
+                    label="📄 Download Markdown",
+                    data=md_report,
                     file_name=f"trend_report_{datetime.now().strftime('%Y%m%d')}.md",
                     mime="text/markdown",
                     use_container_width=True
                 )
 
 
-def generate_paper_list_markdown(journals_data):
-    """Generate markdown list of papers."""
-    md = f"# Medical Literature - Paper List\n"
-    md += f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-    md += "---\n\n"
-    
-    for journal_name, papers in journals_data.items():
-        md += f"## {journal_name}\n\n"
-        for i, paper in enumerate(papers, 1):
-            md += f"### {i}. {paper['title']}\n\n"
-            md += f"**Published:** {paper.get('published', 'Unknown')}\n\n"
-            md += f"**Abstract:** {paper.get('abstract', 'N/A')}\n\n"
-            md += f"[Read Full Paper]({paper['link']})\n\n"
-            md += "---\n\n"
-    
-    return md
-
-
-def generate_full_report(journals_data, trend_analysis, journal_names):
-    """Generate full report with papers and trend analysis."""
+def generate_markdown_report(journals_data, trend_analysis, journal_names):
+    """Generate markdown report."""
     md = f"# Medical Literature Trend Report\n"
     md += f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
     md += f"**Journals:** {', '.join(journal_names)}\n\n"
     md += "---\n\n"
     
-    # Trend Analysis Section
     md += "## 🔬 AI Trend Analysis\n\n"
     md += trend_analysis + "\n\n"
     md += "---\n\n"
     
-    # Paper List Section
     md += "## 📚 Paper List\n\n"
-    
-    total_papers = sum(len(papers) for papers in journals_data.values())
-    md += f"*Total: {total_papers} papers*\n\n"
     
     for journal_name, papers in journals_data.items():
         md += f"### {journal_name} ({len(papers)} papers)\n\n"
