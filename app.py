@@ -321,7 +321,7 @@ def main():
                     import feedparser
                     try:
                         # Use same headers as collector
-                        headers = {'User-Agent': collector.user_agent}
+                        headers = getattr(collector, 'headers', {'User-Agent': collector.user_agent})
                         resp = requests.get(journal["url"], headers=headers, timeout=10)
                         status.write(f"Debug: HTTP Status: {resp.status_code}")
                         
