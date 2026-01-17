@@ -211,11 +211,46 @@ def main():
 
     # Sidebar Configuration
     with st.sidebar:
-        st.header("⚙️ Settings")
+        st.header("⚙️ Configuration")
         
         # Model configuration
         default_model = get_secret("OLLAMA_MODEL", "gptoss-120b:cloud")
         model_name = st.text_input("Ollama Model", value=default_model)
+        
+        st.divider()
+        st.subheader("🛠️ Troubleshooting")
+        if st.button("Run Connection Diagnostics"):
+            st.info("Testing connection to JAMA...")
+            try:
+                import requests
+                # Test 1: Direct Request
+                url = "https://jamanetwork.com/rss/site_3/latestIssue_67.xml"
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+                }
+                
+                # Step 1: Visit Home
+                s = requests.Session()
+                s.headers.update(headers)
+                try:
+                    home = s.get("https://jamanetwork.com/journals/jama", timeout=5)
+                    st.write(f"1. Home Page Access: {home.status_code}")
+                except Exception as e:
+                    st.write(f"1. Home Page Access: Failed ({str(e)})")
+                
+                # Step 2: RSS Fetch
+                r = s.get(url, timeout=10)
+                st.write(f"2. RSS Fetch Status: {r.status_code}")
+                st.write(f"   Content Length: {len(r.content)}")
+                if r.status_code == 200:
+                    st.success("Connection Successful!")
+                else:
+                    st.error(f"Connection Failed: {r.status_code}")
+                    st.code(r.text[:500], language='html')
+                    
+            except Exception as e:
+                st.error(f"Diagnostic Error: {str(e)}")
         
         # Time period selection
         months_back = st.selectbox(
