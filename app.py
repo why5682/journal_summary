@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import sys
 import base64
+import markdown
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -14,27 +15,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import PaperCollector, TrendAnalyzer
 from config import JOURNALS, get_journals_by_category, get_journal_names
 
-# RWD / Pharmacoepidemiology Keywords
-RWD_KEYWORDS = [
-    # Real-World Data/Evidence
-    "real-world", "real world", "rwd", "rwe", "observational",
-    "retrospective", "prospective cohort", "registry", "claims data",
-    "electronic health record", "ehr", "emr", "administrative data",
-    
-    # Pharmacoepidemiology Methods
-    "pharmacoepidemiology", "drug safety", "pharmacovigilance",
-    "adverse event", "adverse drug", "safety signal", "post-marketing",
-    "propensity score", "instrumental variable", "target trial",
-    "confounding", "bias", "causal inference",
-    
-    # Study Designs
-    "cohort study", "case-control", "self-controlled", "sccs",
-    "new user", "active comparator", "comparative effectiveness",
-    
-    # Data Sources
-    "medicare", "medicaid", "cprd", "optum", "marketscan",
-    "flatiron", "trinetx", "iqvia"
-]
+# Default Keywords for Epidemiology Research Filter
+DEFAULT_FILTER_KEYWORDS = """cohort study, case-control, observational, retrospective, prospective
+propensity score, causal inference, confounding, bias, matching
+real-world, registry, claims data, electronic health record
+pharmacovigilance, adverse event, drug safety, post-marketing
+comparative effectiveness, target trial, emulation"""
 
 # ========================================
 # Streamlit Secrets Configuration
@@ -108,6 +94,12 @@ def generate_html_report(journals_data, trend_analysis, journal_names):
             border-left: 4px solid #667eea;
         }}
         .trend-analysis h3 {{ color: #4a5568; margin-top: 15px; margin-bottom: 8px; }}
+        .trend-analysis table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+        .trend-analysis th, .trend-analysis td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
+        .trend-analysis th {{ background: #667eea; color: white; }}
+        .trend-analysis tr:nth-child(even) {{ background: #f0f4ff; }}
+        .trend-analysis ul, .trend-analysis ol {{ margin: 10px 0 10px 20px; }}
+        .trend-analysis strong {{ color: #4a5568; }}
         .journal {{ margin-bottom: 25px; }}
         .journal-title {{ 
             font-size: 1.2em; 
@@ -161,10 +153,11 @@ def generate_html_report(journals_data, trend_analysis, journal_names):
     
     # Trend Analysis Section
     if trend_analysis:
-        # Convert markdown-style formatting to HTML
-        trend_html = trend_analysis.replace('### ', '<h3>').replace('\n\n', '</p><p>')
-        trend_html = trend_html.replace('**', '<strong>').replace('**', '</strong>')
-        trend_html = f"<p>{trend_html}</p>"
+        # Use markdown library for proper conversion (tables, lists, etc.)
+        trend_html = markdown.markdown(
+            trend_analysis, 
+            extensions=['tables', 'fenced_code', 'nl2br']
+        )
         
         html += f"""
     <div class="section">
@@ -243,31 +236,24 @@ def main():
         
         st.divider()
         
-        # RWD/Pharmacoepi Filter
-        st.subheader("🔬 Focus Filter")
-        use_rwd_filter = st.checkbox(
-            "RWD/Pharmacoepi Only",
+        # User Filter
+        st.subheader("🔍 User Filter")
+        use_keyword_filter = st.checkbox(
+            "Enable Keyword Filter",
             value=False,
-            help="Show only papers related to Real-World Data and Pharmacoepidemiology"
+            help="Show only papers matching your keywords"
         )
         
-        if use_rwd_filter:
-            # Show keywords being used
-            with st.expander("📋 Filter Keywords", expanded=False):
-                st.caption("Papers matching any of these:")
-                cols = st.columns(2)
-                for i, kw in enumerate(RWD_KEYWORDS[:20]):
-                    cols[i % 2].markdown(f"• {kw}")
-                if len(RWD_KEYWORDS) > 20:
-                    st.caption(f"...and {len(RWD_KEYWORDS) - 20} more")
-            
-            # Custom keywords
-            custom_keywords = st.text_input(
-                "Add custom keywords (comma-separated)",
-                placeholder="e.g., diabetes, oncology, claims"
+        if use_keyword_filter:
+            # Editable keywords
+            filter_keywords = st.text_area(
+                "Filter Keywords (one per line or comma-separated)",
+                value=DEFAULT_FILTER_KEYWORDS,
+                height=150,
+                help="Edit keywords to filter papers. Papers matching ANY keyword will be shown."
             )
         else:
-            custom_keywords = ""
+            filter_keywords = ""
         
         st.divider()
         
@@ -337,12 +323,15 @@ def main():
             
             status.update(label=f"✅ Fetched {len(all_papers)} papers!", state="complete", expanded=False)
         
-        # Apply RWD/Pharmacoepi filter if enabled
-        if use_rwd_filter:
-            # Build keyword list
-            keywords = RWD_KEYWORDS.copy()
-            if custom_keywords:
-                keywords.extend([k.strip().lower() for k in custom_keywords.split(",") if k.strip()])
+        # Apply keyword filter if enabled
+        if use_keyword_filter and filter_keywords.strip():
+            # Parse keywords from text_area (supports comma or newline separated)
+            keywords = []
+            for line in filter_keywords.split('\n'):
+                for kw in line.split(','):
+                    kw = kw.strip().lower()
+                    if kw:
+                        keywords.append(kw)
             
             # Filter papers
             filtered_papers = []
@@ -353,10 +342,10 @@ def main():
                     filtered_papers.append(paper)
             
             if filtered_papers:
-                st.info(f"🔬 **RWD/Pharmacoepi Filter**: {len(filtered_papers)}/{len(all_papers)} papers matched")
+                st.info(f"🔍 **Keyword Filter**: {len(filtered_papers)}/{len(all_papers)} papers matched")
                 all_papers = filtered_papers
             else:
-                st.warning(f"⚠️ No papers matched RWD/Pharmacoepi keywords. Showing all {len(all_papers)} papers.")
+                st.warning(f"⚠️ No papers matched your keywords. Showing all {len(all_papers)} papers.")
         
         # Store papers in session state
         st.session_state['papers'] = all_papers
