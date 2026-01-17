@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class PaperCollector:
     """Handles fetching and parsing of RSS feeds with journal-specific logic."""
 
-    def __init__(self, user_agent: str = "MedicalSummarizer/1.0"):
+    def __init__(self, user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"):
         self.user_agent = user_agent
 
     def fetch_papers(
@@ -33,7 +33,12 @@ class PaperCollector:
         logger.info(f"Fetching RSS feed: {url}")
         
         try:
-            feed = feedparser.parse(url, agent=self.user_agent)
+            # Add request headers to bypass bot protection (JAMA need this)
+            feed = feedparser.parse(
+                url, 
+                agent=self.user_agent,
+                request_headers={'User-Agent': self.user_agent}
+            )
             
             if feed.bozo:
                 logger.warning(f"Feed parsing warning: {feed.bozo_exception}")
@@ -106,10 +111,14 @@ class PaperCollector:
         if pub_date_str:
             try:
                 pub_date = date_parser.parse(pub_date_str)
-                if pub_date.replace(tzinfo=None) < cutoff_date:
+                # Normalize to naive datetime (UTC) to safely compare/sort
+                pub_date = pub_date.replace(tzinfo=None)
+                
+                if pub_date < cutoff_date:
                     return None
             except Exception:
                 # If date parsing fails, include the paper anyway (no date filter)
+                pub_date = None
                 pass
 
         # Extract title
