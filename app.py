@@ -14,6 +14,28 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import PaperCollector, TrendAnalyzer
 from config import JOURNALS, get_journals_by_category, get_journal_names
 
+# RWD / Pharmacoepidemiology Keywords
+RWD_KEYWORDS = [
+    # Real-World Data/Evidence
+    "real-world", "real world", "rwd", "rwe", "observational",
+    "retrospective", "prospective cohort", "registry", "claims data",
+    "electronic health record", "ehr", "emr", "administrative data",
+    
+    # Pharmacoepidemiology Methods
+    "pharmacoepidemiology", "drug safety", "pharmacovigilance",
+    "adverse event", "adverse drug", "safety signal", "post-marketing",
+    "propensity score", "instrumental variable", "target trial",
+    "confounding", "bias", "causal inference",
+    
+    # Study Designs
+    "cohort study", "case-control", "self-controlled", "sccs",
+    "new user", "active comparator", "comparative effectiveness",
+    
+    # Data Sources
+    "medicare", "medicaid", "cprd", "optum", "marketscan",
+    "flatiron", "trinetx", "iqvia"
+]
+
 # ========================================
 # Streamlit Secrets Configuration
 # ========================================
@@ -221,6 +243,34 @@ def main():
         
         st.divider()
         
+        # RWD/Pharmacoepi Filter
+        st.subheader("🔬 Focus Filter")
+        use_rwd_filter = st.checkbox(
+            "RWD/Pharmacoepi Only",
+            value=False,
+            help="Show only papers related to Real-World Data and Pharmacoepidemiology"
+        )
+        
+        if use_rwd_filter:
+            # Show keywords being used
+            with st.expander("📋 Filter Keywords", expanded=False):
+                st.caption("Papers matching any of these:")
+                cols = st.columns(2)
+                for i, kw in enumerate(RWD_KEYWORDS[:20]):
+                    cols[i % 2].markdown(f"• {kw}")
+                if len(RWD_KEYWORDS) > 20:
+                    st.caption(f"...and {len(RWD_KEYWORDS) - 20} more")
+            
+            # Custom keywords
+            custom_keywords = st.text_input(
+                "Add custom keywords (comma-separated)",
+                placeholder="e.g., diabetes, oncology, claims"
+            )
+        else:
+            custom_keywords = ""
+        
+        st.divider()
+        
         # API Key Status
         ollama_api_key = get_secret("OLLAMA_API_KEY", "")
         
@@ -286,6 +336,27 @@ def main():
                 st.stop()
             
             status.update(label=f"✅ Fetched {len(all_papers)} papers!", state="complete", expanded=False)
+        
+        # Apply RWD/Pharmacoepi filter if enabled
+        if use_rwd_filter:
+            # Build keyword list
+            keywords = RWD_KEYWORDS.copy()
+            if custom_keywords:
+                keywords.extend([k.strip().lower() for k in custom_keywords.split(",") if k.strip()])
+            
+            # Filter papers
+            filtered_papers = []
+            for paper in all_papers:
+                text = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
+                if any(kw in text for kw in keywords):
+                    paper['matched_filter'] = True
+                    filtered_papers.append(paper)
+            
+            if filtered_papers:
+                st.info(f"🔬 **RWD/Pharmacoepi Filter**: {len(filtered_papers)}/{len(all_papers)} papers matched")
+                all_papers = filtered_papers
+            else:
+                st.warning(f"⚠️ No papers matched RWD/Pharmacoepi keywords. Showing all {len(all_papers)} papers.")
         
         # Store papers in session state
         st.session_state['papers'] = all_papers
