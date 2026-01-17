@@ -83,6 +83,16 @@ JOURNALS = [
         "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamapsychiatry&hl=en-US&gl=US&ceid=US:en",
         "category": "JAMA Network"
     },
+    {
+        "name": "JAMA Cardiology",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamacardiology&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Neurology",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamaneurology&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
 
     # BMJ Group
     {
