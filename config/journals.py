@@ -93,6 +93,26 @@ JOURNALS = [
         "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamaneurology&hl=en-US&gl=US&ceid=US:en",
         "category": "JAMA Network"
     },
+    {
+        "name": "JAMA Pediatrics",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamapediatrics&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Surgery",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamasurgery&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Dermatology",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamadermatology&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Ophthalmology",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamaophthalmology&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
 
     # BMJ Group
     {
