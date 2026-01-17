@@ -314,6 +314,18 @@ def main():
                     paper['category'] = journal.get('category', 'Other')
                     all_papers.append(paper)
                 
+                if not papers:
+                    status.write(f"⚠️ Found 0 papers from {journal['name']}. Debugging...")
+                    # Debug: Parse manually to show what's wrong
+                    import feedparser
+                    f = feedparser.parse(journal["url"])
+                    status.write(f"Debug: Feed entries: {len(f.entries)}")
+                    if f.entries:
+                        e = f.entries[0]
+                        pub = e.get('published', '') or e.get('updated', '') or e.get('prism_publicationdate', '')
+                        status.write(f"Debug: First entry title: {e.get('title', 'No Title')}")
+                        status.write(f"Debug: First entry date: {pub}")
+                        
                 status.write(f"✅ Found {len(papers)} papers from {journal['name']}")
             
             if not all_papers:
