@@ -4,6 +4,7 @@ Fetches and parses papers from medical journal RSS feeds.
 Includes journal-specific parsing and HTML cleanup.
 """
 import feedparser
+import requests
 import logging
 import re
 import html
@@ -33,12 +34,16 @@ class PaperCollector:
         logger.info(f"Fetching RSS feed: {url}")
         
         try:
-            # Add request headers to bypass bot protection (JAMA need this)
-            feed = feedparser.parse(
+            # Use requests to fetch feed content (robust against bot protection)
+            response = requests.get(
                 url, 
-                agent=self.user_agent,
-                request_headers={'User-Agent': self.user_agent}
+                headers={'User-Agent': self.user_agent},
+                timeout=10
             )
+            response.raise_for_status()
+            
+            # Parse the content
+            feed = feedparser.parse(response.content)
             
             if feed.bozo:
                 logger.warning(f"Feed parsing warning: {feed.bozo_exception}")

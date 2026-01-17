@@ -317,14 +317,24 @@ def main():
                 if not papers:
                     status.write(f"⚠️ Found 0 papers from {journal['name']}. Debugging...")
                     # Debug: Parse manually to show what's wrong
+                    import requests
                     import feedparser
-                    f = feedparser.parse(journal["url"])
-                    status.write(f"Debug: Feed entries: {len(f.entries)}")
-                    if f.entries:
-                        e = f.entries[0]
-                        pub = e.get('published', '') or e.get('updated', '') or e.get('prism_publicationdate', '')
-                        status.write(f"Debug: First entry title: {e.get('title', 'No Title')}")
-                        status.write(f"Debug: First entry date: {pub}")
+                    try:
+                        # Use same headers as collector
+                        headers = {'User-Agent': collector.user_agent}
+                        resp = requests.get(journal["url"], headers=headers, timeout=10)
+                        status.write(f"Debug: HTTP Status: {resp.status_code}")
+                        
+                        f = feedparser.parse(resp.content)
+                        status.write(f"Debug: Feed entries: {len(f.entries)}")
+                        
+                        if f.entries:
+                            e = f.entries[0]
+                            pub = e.get('published', '') or e.get('updated', '') or e.get('prism_publicationdate', '')
+                            status.write(f"Debug: First entry title: {e.get('title', 'No Title')}")
+                            status.write(f"Debug: First entry date: {pub}")
+                    except Exception as e:
+                        status.write(f"Debug: Error: {str(e)}")
                         
                 status.write(f"✅ Found {len(papers)} papers from {journal['name']}")
             
