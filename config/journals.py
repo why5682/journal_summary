@@ -110,6 +110,36 @@ JOURNALS = [
         "url": "https://qualitysafety.bmj.com/rss/recent.xml",
         "category": "BMJ Group"
     },
+    {
+        "name": "Gut",
+        "url": "https://gut.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
+    {
+        "name": "Thorax",
+        "url": "https://thorax.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
+    {
+        "name": "Annals of the Rheumatic Diseases",
+        "url": "https://ard.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
+    {
+        "name": "British Journal of Sports Medicine",
+        "url": "https://bjsm.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
+    {
+        "name": "JNNP",
+        "url": "https://jnnp.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
+    {
+        "name": "Heart",
+        "url": "https://heart.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
 ]
 
 
