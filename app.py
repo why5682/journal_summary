@@ -14,27 +14,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import PaperCollector, TrendAnalyzer
 from config import JOURNALS, get_journals_by_category, get_journal_names
 
-# RWD / Pharmacoepidemiology Keywords
-RWD_KEYWORDS = [
-    # Real-World Data/Evidence
-    "real-world", "real world", "rwd", "rwe", "observational",
-    "retrospective", "prospective cohort", "registry", "claims data",
-    "electronic health record", "ehr", "emr", "administrative data",
-    
-    # Pharmacoepidemiology Methods
-    "pharmacoepidemiology", "drug safety", "pharmacovigilance",
-    "adverse event", "adverse drug", "safety signal", "post-marketing",
-    "propensity score", "instrumental variable", "target trial",
-    "confounding", "bias", "causal inference",
-    
-    # Study Designs
-    "cohort study", "case-control", "self-controlled", "sccs",
-    "new user", "active comparator", "comparative effectiveness",
-    
-    # Data Sources
-    "medicare", "medicaid", "cprd", "optum", "marketscan",
-    "flatiron", "trinetx", "iqvia"
-]
+# RWD / Pharmacoepidemiology Keywords (Default - can be edited by user)
+DEFAULT_RWD_KEYWORDS = """real-world, real world, rwd, rwe, observational
+retrospective, prospective cohort, registry, claims data
+electronic health record, ehr, emr, administrative data
+pharmacovigilance, drug safety, adverse event, adverse drug, safety signal
+propensity score, instrumental variable, target trial, causal inference
+cohort study, case-control, self-controlled, new user
+comparative effectiveness, post-marketing"""
 
 # ========================================
 # Streamlit Secrets Configuration
@@ -245,29 +232,22 @@ def main():
         
         # RWD/Pharmacoepi Filter
         st.subheader("🔬 Focus Filter")
-        use_rwd_filter = st.checkbox(
-            "RWD/Pharmacoepi Only",
-            value=False,
-            help="Show only papers related to Real-World Data and Pharmacoepidemiology"
+        enable_focus_filter = st.checkbox(
+            "Enable RWD/Pharmacoepi Focus",
+            value=True,
+            help="Also analyze RWD/Pharmacoepi papers separately"
         )
         
-        if use_rwd_filter:
-            # Show keywords being used
-            with st.expander("📋 Filter Keywords", expanded=False):
-                st.caption("Papers matching any of these:")
-                cols = st.columns(2)
-                for i, kw in enumerate(RWD_KEYWORDS[:20]):
-                    cols[i % 2].markdown(f"• {kw}")
-                if len(RWD_KEYWORDS) > 20:
-                    st.caption(f"...and {len(RWD_KEYWORDS) - 20} more")
-            
-            # Custom keywords
-            custom_keywords = st.text_input(
-                "Add custom keywords (comma-separated)",
-                placeholder="e.g., diabetes, oncology, claims"
+        if enable_focus_filter:
+            # Editable keywords
+            filter_keywords = st.text_area(
+                "Filter Keywords (one per line or comma-separated)",
+                value=DEFAULT_RWD_KEYWORDS,
+                height=150,
+                help="Edit keywords to filter papers. Papers matching any keyword will be included."
             )
         else:
-            custom_keywords = ""
+            filter_keywords = ""
         
         st.divider()
         
@@ -337,63 +317,83 @@ def main():
             
             status.update(label=f"✅ Fetched {len(all_papers)} papers!", state="complete", expanded=False)
         
-        # Apply RWD/Pharmacoepi filter if enabled
-        if use_rwd_filter:
-            # Build keyword list
-            keywords = RWD_KEYWORDS.copy()
-            if custom_keywords:
-                keywords.extend([k.strip().lower() for k in custom_keywords.split(",") if k.strip()])
+        # Apply RWD/Pharmacoepi filter for focused analysis
+        filtered_papers = []
+        if enable_focus_filter and filter_keywords:
+            # Parse keywords from text area
+            keywords = []
+            for line in filter_keywords.split('\n'):
+                for kw in line.split(','):
+                    kw = kw.strip().lower()
+                    if kw:
+                        keywords.append(kw)
             
             # Filter papers
-            filtered_papers = []
             for paper in all_papers:
                 text = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
                 if any(kw in text for kw in keywords):
-                    paper['matched_filter'] = True
                     filtered_papers.append(paper)
-            
-            if filtered_papers:
-                st.info(f"🔬 **RWD/Pharmacoepi Filter**: {len(filtered_papers)}/{len(all_papers)} papers matched")
-                all_papers = filtered_papers
-            else:
-                st.warning(f"⚠️ No papers matched RWD/Pharmacoepi keywords. Showing all {len(all_papers)} papers.")
         
         # Store papers in session state
-        st.session_state['papers'] = all_papers
+        st.session_state['all_papers'] = all_papers
+        st.session_state['filtered_papers'] = filtered_papers
         st.session_state['selected_journals'] = selected_journal_names
+        st.session_state['filter_enabled'] = enable_focus_filter and len(filtered_papers) > 0
         
-        # AI Trend Analysis
+        # AI Trend Analysis (both all and filtered)
         if ollama_api_key:
-            with st.spinner("🤖 Analyzing trends with AI..."):
-                analyzer = TrendAnalyzer(api_key=ollama_api_key, model=model_name)
-                trend_analysis = analyzer.analyze_trends(all_papers)
-                st.session_state['trend_analysis'] = trend_analysis
+            analyzer = TrendAnalyzer(api_key=ollama_api_key, model=model_name)
+            
+            # Always analyze all papers
+            with st.spinner("🤖 Analyzing all papers trend..."):
+                trend_all = analyzer.analyze_trends(all_papers)
+                st.session_state['trend_all'] = trend_all
+            
+            # Analyze filtered papers if available
+            if filtered_papers:
+                with st.spinner(f"🔬 Analyzing RWD/Pharmacoepi focus ({len(filtered_papers)} papers)..."):
+                    trend_filtered = analyzer.analyze_trends(filtered_papers)
+                    st.session_state['trend_filtered'] = trend_filtered
+            else:
+                st.session_state['trend_filtered'] = None
         else:
-            st.session_state['trend_analysis'] = None
+            st.session_state['trend_all'] = None
+            st.session_state['trend_filtered'] = None
 
     # Display results
-    if 'papers' in st.session_state:
-        papers = st.session_state['papers']
+    if 'all_papers' in st.session_state:
+        all_papers = st.session_state['all_papers']
+        filtered_papers = st.session_state.get('filtered_papers', [])
+        filter_enabled = st.session_state.get('filter_enabled', False)
+        
+        # Summary stats
+        st.info(f"📊 **Total**: {len(all_papers)} papers | **RWD/Pharmacoepi Match**: {len(filtered_papers)} papers")
         
         # Create two columns
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.subheader(f"📚 Recent Papers ({len(papers)})")
+            st.subheader(f"📚 Paper List ({len(all_papers)})")
             
             # Group by journal
             journals_data = {}
-            for paper in papers:
+            for paper in all_papers:
                 source = paper['source']
                 if source not in journals_data:
                     journals_data[source] = []
                 journals_data[source].append(paper)
             
+            # Store for download
+            st.session_state['journals_data'] = journals_data
+            
             # Display papers grouped by journal
             for journal_name, journal_papers in journals_data.items():
                 with st.expander(f"📖 {journal_name} ({len(journal_papers)} papers)", expanded=True):
                     for i, paper in enumerate(journal_papers, 1):
-                        st.markdown(f"**{i}. [{paper['title']}]({paper['link']})**")
+                        # Highlight if matched filter
+                        is_filtered = paper in filtered_papers
+                        prefix = "🔬 " if is_filtered else ""
+                        st.markdown(f"**{prefix}{i}. [{paper['title']}]({paper['link']})**")
                         st.caption(f"📅 {paper.get('published', 'Unknown date')}")
                         
                         # Show abstract
@@ -405,12 +405,30 @@ def main():
         with col2:
             st.subheader("🔬 AI Trend Analysis")
             
-            if st.session_state.get('trend_analysis'):
-                st.markdown(st.session_state['trend_analysis'])
-            elif not ollama_api_key:
-                st.warning("⚠️ Add OLLAMA_API_KEY to enable AI trend analysis")
+            # Create tabs for dual analysis
+            if filter_enabled:
+                tab1, tab2 = st.tabs(["📊 All Papers", "🔬 RWD/Pharmacoepi Focus"])
+                
+                with tab1:
+                    if st.session_state.get('trend_all'):
+                        st.markdown(st.session_state['trend_all'])
+                    else:
+                        st.warning("⚠️ No trend analysis available")
+                
+                with tab2:
+                    st.caption(f"*Based on {len(filtered_papers)} matching papers*")
+                    if st.session_state.get('trend_filtered'):
+                        st.markdown(st.session_state['trend_filtered'])
+                    else:
+                        st.warning("⚠️ No filtered papers trend analysis")
             else:
-                st.info("Click 'Fetch Papers & Analyze Trends' to generate analysis")
+                # Only all papers analysis
+                if st.session_state.get('trend_all'):
+                    st.markdown(st.session_state['trend_all'])
+                elif not get_secret("OLLAMA_API_KEY"):
+                    st.warning("⚠️ Add OLLAMA_API_KEY to enable AI trend analysis")
+                else:
+                    st.info("Click 'Fetch Papers & Analyze Trends' to generate analysis")
         
         # Download section
         st.divider()
@@ -422,7 +440,7 @@ def main():
             # Download HTML Report
             html_report = generate_html_report(
                 journals_data, 
-                st.session_state.get('trend_analysis', ''),
+                st.session_state.get('trend_all', ''),
                 st.session_state.get('selected_journals', [])
             )
             st.download_button(
@@ -435,10 +453,10 @@ def main():
         
         with col_dl2:
             # Download Markdown (for developers)
-            if st.session_state.get('trend_analysis'):
+            if st.session_state.get('trend_all'):
                 md_report = generate_markdown_report(
                     journals_data, 
-                    st.session_state['trend_analysis'],
+                    st.session_state['trend_all'],
                     st.session_state.get('selected_journals', [])
                 )
                 st.download_button(
