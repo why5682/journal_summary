@@ -34,23 +34,72 @@ JOURNALS = [
         "url": "https://www.nejm.org/action/showFeed?type=etoc&feed=rss&jc=nejm",
         "category": "General Medical"
     },
+    
+    # The Lancet Group
     {
         "name": "The Lancet",
         "url": "https://www.thelancet.com/rssfeed/lancet_current.xml",
-        "category": "General Medical"
+        "category": "The Lancet Group"
     },
+    {
+        "name": "The Lancet Oncology",
+        "url": "https://www.thelancet.com/rssfeed/lanonc_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Neurology",
+        "url": "https://www.thelancet.com/rssfeed/laneur_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Infectious Diseases",
+        "url": "https://www.thelancet.com/rssfeed/laninf_current.xml",
+        "category": "The Lancet Group"
+    },
+
+    # JAMA Network (Using Google News Proxy to bypass blocking)
     {
         "name": "JAMA",
         "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jama&hl=en-US&gl=US&ceid=US:en",
-        "category": "General Medical"
+        "category": "JAMA Network"
     },
+    {
+        "name": "JAMA Internal Medicine",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamainternalmedicine&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Oncology",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamaoncology&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Network Open",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamanetworkopen&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+    {
+        "name": "JAMA Psychiatry",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jamapsychiatry&hl=en-US&gl=US&ceid=US:en",
+        "category": "JAMA Network"
+    },
+
+    # BMJ Group
     {
         "name": "The BMJ",
         "url": "https://www.bmj.com/rss/recent.xml",
-        "category": "General Medical"
+        "category": "BMJ Group"
     },
-    # Note: Annals of Internal Medicine RSS feeds have been deprecated
-    # These journals may need alternative data sources in the future
+    {
+        "name": "BMJ Open",
+        "url": "https://bmjopen.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
+    {
+        "name": "BMJ Quality & Safety",
+        "url": "https://qualitysafety.bmj.com/rss/recent.xml",
+        "category": "BMJ Group"
+    },
 ]
 
 
