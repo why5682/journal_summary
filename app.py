@@ -224,20 +224,15 @@ def main():
             try:
                 import requests
                 import cloudscraper
-                # Test 1: Direct Request
-                url = "https://jamanetwork.com/rss/site_3/latestIssue_67.xml"
+                # Test 1: Google News Proxy (JAMA)
+                url = "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jama&hl=en-US&gl=US&ceid=US:en"
                 headers = {
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
                 }
                 
-                # Step 1: Visit Home with Scraper
+                # Use scraper
                 s = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
                 s.headers.update(headers)
-                try:
-                    home = s.get("https://jamanetwork.com/journals/jama", timeout=10)
-                    st.write(f"1. Home Page Access: {home.status_code}")
-                except Exception as e:
-                    st.write(f"1. Home Page Access: Failed ({str(e)})")
                 
                 # Step 2: RSS Fetch
                 r = s.get(url, timeout=10)

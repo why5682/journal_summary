@@ -41,7 +41,7 @@ JOURNALS = [
     },
     {
         "name": "JAMA",
-        "url": "https://jamanetwork.com/rss/site_3/latestIssue_67.xml",
+        "url": "https://news.google.com/rss/search?q=site:jamanetwork.com/journals/jama&hl=en-US&gl=US&ceid=US:en",
         "category": "General Medical"
     },
     {
