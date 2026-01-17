@@ -27,7 +27,7 @@ class PaperCollector:
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Cache-Control': 'max-age=0',
-            'Referer': 'https://www.google.com/',
+            'Referer': 'https://jamanetwork.com/journals/jama',
         }
         self.session.headers.update(self.headers)
         self.user_agent = user_agent
@@ -45,6 +45,13 @@ class PaperCollector:
         logger.info(f"Fetching RSS feed: {url}")
         
         try:
+            # Special handling for JAMA: Visit homepage first to set cookies
+            if 'jamanetwork.com' in url:
+                try:
+                    self.session.get('https://jamanetwork.com/journals/jama', timeout=5)
+                except Exception:
+                    pass
+
             # Use requests session to fetch feed content (handles cookies/headers)
             response = self.session.get(
                 url, 
