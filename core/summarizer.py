@@ -12,26 +12,35 @@ logger = logging.getLogger(__name__)
 class PaperSummarizer:
     """Handles paper summarization using Ollama Cloud API."""
 
-    def __init__(
-        self, 
-        api_key: str,
-        model: str = "gptoss-120b:cloud",
-        host: str = "https://ollama.com"
-    ):
-        """
-        Initialize the summarizer with Ollama Cloud credentials.
+    def __init__(self, model_name="gpt-oss:120b"):
+        import os
+        import streamlit as st
         
-        Args:
-            api_key: Ollama Cloud API key
-            model: Model name to use
-            host: Ollama Cloud host URL
-        """
-        self.model = model
-        self.client = Client(
-            host=host,
-            headers={'Authorization': f'Bearer {api_key}'}
-        )
-        logger.info(f"Initialized Ollama Cloud summarizer with model: {model}")
+        self.model = model_name
+        self.api_key = os.environ.get("OLLAMA_API_KEY")
+        
+        # Try loading from secrets if not in env
+        if not self.api_key:
+            try:
+                self.api_key = st.secrets.get("OLLAMA_API_KEY", "")
+            except:
+                self.api_key = ""
+        
+        # Initialize Client based on API Key presence (Cloud vs Local)
+        if self.api_key:
+            # Cloud Mode
+            self.client = Client(
+                host="https://ollama.com",
+                headers={'Authorization': f'Bearer {self.api_key}'}
+            )
+            # Legacy mapping
+            if model_name == "gptoss-120b:cloud": 
+                self.model = "gpt-oss:120b"
+        else:
+            # Local Mode
+            self.client = Client(host='http://localhost:11434')
+            
+        logger.info(f"Initialized Summarizer with model: {self.model}")
 
     def summarize(self, title: str, abstract: str) -> str:
         """

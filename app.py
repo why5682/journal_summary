@@ -9,11 +9,10 @@ import sys
 import base64
 import markdown
 
-# Add project root to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from core import PaperCollector, TrendAnalyzer
-from config import JOURNALS, get_journals_by_category, get_journal_names
+# Local imports
+from core.collector import PaperCollector
+from core.trend_analyzer import TrendAnalyzer
+from config.journals import JOURNALS, get_journals_by_category, get_journal_names
 
 # Default Keywords for Epidemiology Research Filter
 DEFAULT_FILTER_KEYWORDS = """cohort study, case-control, observational, retrospective, prospective
@@ -217,6 +216,14 @@ def main():
         default_model = get_secret("OLLAMA_MODEL", "gptoss-120b:cloud")
         model_name = st.text_input("Ollama Model", value=default_model)
         
+        # Language Selection
+        language = st.radio(
+            "응답 언어 / Response Language",
+            options=["en", "ko"],
+            format_func=lambda x: "🇺🇸 English" if x == "en" else "🇰🇷 한국어",
+            horizontal=True
+        )
+        
         st.divider()
         st.subheader("🛠️ Troubleshooting")
         if st.button("Run Connection Diagnostics"):
@@ -418,8 +425,9 @@ def main():
         # AI Trend Analysis
         if ollama_api_key:
             with st.spinner("🤖 Analyzing trends with AI..."):
-                analyzer = TrendAnalyzer(api_key=ollama_api_key, model=model_name)
-                trend_analysis = analyzer.analyze_trends(all_papers)
+                # Backend handles API key from secrets/env
+                analyzer = TrendAnalyzer(model_name=model_name)
+                trend_analysis = analyzer.analyze_trends(all_papers, language=language)
                 st.session_state['trend_analysis'] = trend_analysis
         else:
             st.session_state['trend_analysis'] = None
