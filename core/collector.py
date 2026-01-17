@@ -19,6 +19,7 @@ class PaperCollector:
     """Handles fetching and parsing of RSS feeds with journal-specific logic."""
 
     def __init__(self, user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"):
+        self.session = requests.Session()
         self.headers = {
             'User-Agent': user_agent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -26,7 +27,9 @@ class PaperCollector:
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Cache-Control': 'max-age=0',
+            'Referer': 'https://www.google.com/',
         }
+        self.session.headers.update(self.headers)
         self.user_agent = user_agent
 
     def fetch_papers(
@@ -42,10 +45,9 @@ class PaperCollector:
         logger.info(f"Fetching RSS feed: {url}")
         
         try:
-            # Use requests to fetch feed content (robust against bot protection)
-            response = requests.get(
+            # Use requests session to fetch feed content (handles cookies/headers)
+            response = self.session.get(
                 url, 
-                headers=self.headers,
                 timeout=10
             )
             response.raise_for_status()
