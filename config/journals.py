@@ -56,6 +56,36 @@ JOURNALS = [
         "url": "https://www.thelancet.com/rssfeed/laninf_current.xml",
         "category": "The Lancet Group"
     },
+    {
+        "name": "The Lancet Respiratory Medicine",
+        "url": "https://www.thelancet.com/rssfeed/lanres_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Diabetes & Endocrinology",
+        "url": "https://www.thelancet.com/rssfeed/landia_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Psychiatry",
+        "url": "https://www.thelancet.com/rssfeed/lanpsy_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Gastroenterology & Hepatology",
+        "url": "https://www.thelancet.com/rssfeed/langas_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Global Health",
+        "url": "https://www.thelancet.com/rssfeed/langlo_current.xml",
+        "category": "The Lancet Group"
+    },
+    {
+        "name": "The Lancet Public Health",
+        "url": "https://www.thelancet.com/rssfeed/lanpub_current.xml",
+        "category": "The Lancet Group"
+    },
 
     # JAMA Network (Using Google News Proxy to bypass blocking)
     {
