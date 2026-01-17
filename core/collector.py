@@ -1,12 +1,9 @@
 """
 RSS Feed Collector Module
 Fetches and parses papers from medical journal RSS feeds.
-Includes journal-specific parsing and HTML cleanup.
 """
 import feedparser
 import logging
-import re
-import html
 from datetime import datetime, timedelta
 from dateutil import parser as date_parser
 from typing import List, Dict, Any, Optional
@@ -15,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class PaperCollector:
-    """Handles fetching and parsing of RSS feeds with journal-specific logic."""
+    """Handles fetching and parsing of RSS feeds."""
 
     def __init__(self, user_agent: str = "MedicalSummarizer/1.0"):
         self.user_agent = user_agent
@@ -24,11 +21,18 @@ class PaperCollector:
         self, 
         url: str, 
         months_back: int = 1,
-        max_papers: int = 10
+        max_papers: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Fetches papers from an RSS feed within specified date range.
-        Returns max_papers most recent papers, sorted by date (newest first).
+        
+        Args:
+            url: RSS feed URL
+            months_back: Number of months to look back
+            max_papers: Maximum number of papers to return (None for all)
+            
+        Returns:
+            List of paper dictionaries
         """
         logger.info(f"Fetching RSS feed: {url}")
         
@@ -38,58 +42,30 @@ class PaperCollector:
             if feed.bozo:
                 logger.warning(f"Feed parsing warning: {feed.bozo_exception}")
 
-            # Detect journal type from URL
-            journal_type = self._detect_journal_type(url)
-            
             papers = []
             cutoff_date = datetime.now() - timedelta(days=months_back * 30)
 
             for entry in feed.entries:
-                paper = self._parse_entry(entry, cutoff_date, journal_type)
+                paper = self._parse_entry(entry, cutoff_date)
                 if paper:
                     papers.append(paper)
+                    
+                    if max_papers and len(papers) >= max_papers:
+                        break
 
-            # Sort by date (newest first)
-            papers.sort(
-                key=lambda p: p.get('parsed_date') or datetime.min,
-                reverse=True
-            )
-            
-            # Limit to max_papers
-            papers = papers[:max_papers]
-
-            logger.info(f"Found {len(papers)} papers from feed (limited to {max_papers})")
+            logger.info(f"Found {len(papers)} papers from feed")
             return papers
 
         except Exception as e:
             logger.error(f"Error fetching feed {url}: {e}")
             return []
 
-    def _detect_journal_type(self, url: str) -> str:
-        """Detect journal type from URL for specific parsing."""
-        url_lower = url.lower()
-        
-        if 'wiley.com' in url_lower:
-            return 'wiley'
-        elif 'springer.com' in url_lower:
-            return 'springer'
-        elif 'nejm.org' in url_lower:
-            return 'nejm'
-        elif 'thelancet.com' in url_lower:
-            return 'lancet'
-        elif 'jamanetwork.com' in url_lower:
-            return 'jama'
-        else:
-            return 'generic'
-
     def _parse_entry(
         self, 
         entry: Any, 
-        cutoff_date: datetime,
-        journal_type: str
+        cutoff_date: datetime
     ) -> Optional[Dict[str, Any]]:
-        """Parse a single RSS entry with journal-specific logic."""
-        
+        """Parse a single RSS entry into a paper dict."""
         # Parse publication date
         pub_date_str = entry.get("published", "") or entry.get("updated", "")
         pub_date = None
@@ -97,20 +73,20 @@ class PaperCollector:
         if pub_date_str:
             try:
                 pub_date = date_parser.parse(pub_date_str)
+                # Skip papers older than cutoff
                 if pub_date.replace(tzinfo=None) < cutoff_date:
                     return None
             except Exception:
-                pass
+                pass  # If parsing fails, include the paper anyway
 
-        # Extract title
-        title = self._clean_text(entry.get("title", ""))
-        
-        # Extract link
+        title = entry.get("title", "").strip()
         link = entry.get("link", "").strip()
-        
-        # Extract abstract based on journal type
-        abstract = self._extract_abstract(entry, journal_type)
-        
+        abstract = (
+            entry.get("description", "") or 
+            entry.get("summary", "") or 
+            "No abstract available"
+        ).strip()
+
         if not title or not link:
             return None
 
@@ -121,82 +97,3 @@ class PaperCollector:
             "published": pub_date_str or "Unknown date",
             "parsed_date": pub_date
         }
-
-    def _extract_abstract(self, entry: Any, journal_type: str) -> str:
-        """Extract and clean abstract based on journal type."""
-        
-        # Try different fields for abstract
-        raw_abstract = ""
-        
-        if journal_type == 'wiley':
-            # Wiley uses dc:description with HTML, or content:encoded
-            raw_abstract = (
-                entry.get("dc_description", "") or 
-                entry.get("description", "") or 
-                entry.get("summary", "")
-            )
-        elif journal_type == 'springer':
-            # Springer has clean text in description
-            raw_abstract = entry.get("description", "") or entry.get("summary", "")
-        elif journal_type == 'nejm':
-            # NEJM has brief description
-            raw_abstract = entry.get("description", "") or entry.get("summary", "")
-        elif journal_type == 'lancet':
-            # Lancet often has minimal abstract
-            raw_abstract = entry.get("description", "") or entry.get("summary", "")
-        elif journal_type == 'jama':
-            # JAMA has description
-            raw_abstract = entry.get("description", "") or entry.get("summary", "")
-        else:
-            raw_abstract = (
-                entry.get("description", "") or 
-                entry.get("summary", "") or 
-                ""
-            )
-        
-        # Clean the abstract
-        cleaned = self._clean_abstract(raw_abstract)
-        
-        return cleaned if cleaned else "No abstract available"
-
-    def _clean_abstract(self, text: str) -> str:
-        """Clean abstract text by removing HTML tags and normalizing whitespace."""
-        if not text:
-            return ""
-        
-        # Decode HTML entities (&amp; -> &, etc.)
-        text = html.unescape(text)
-        
-        # Remove HTML tags
-        text = re.sub(r'<[^>]+>', ' ', text)
-        
-        # Remove "ABSTRACT" prefix if present
-        text = re.sub(r'^ABSTRACT\s*', '', text, flags=re.IGNORECASE)
-        
-        # Remove section headers like "Purpose", "Methods", "Results", "Conclusion"
-        # but keep content (replace with colon if needed for readability)
-        text = re.sub(r'\b(Purpose|Objective|Background|Methods?|Results?|Conclusions?|Discussion)\b\s*:?\s*', '', text, flags=re.IGNORECASE)
-        
-        # Normalize whitespace
-        text = re.sub(r'\s+', ' ', text)
-        
-        # Strip leading/trailing whitespace
-        text = text.strip()
-        
-        return text
-
-    def _clean_text(self, text: str) -> str:
-        """Clean general text (titles, etc.)."""
-        if not text:
-            return ""
-        
-        # Decode HTML entities
-        text = html.unescape(text)
-        
-        # Remove HTML tags (if any)
-        text = re.sub(r'<[^>]+>', '', text)
-        
-        # Normalize whitespace
-        text = re.sub(r'\s+', ' ', text)
-        
-        return text.strip()
