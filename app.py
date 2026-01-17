@@ -250,7 +250,7 @@ def main():
         # Time period selection
         months_back = st.selectbox(
             "Time Period",
-            options=[1, 2, 3],
+            options=[3, 6, 12],
             format_func=lambda x: f"Last {x} month{'s' if x > 1 else ''}",
             index=0
         )
