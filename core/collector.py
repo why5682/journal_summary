@@ -79,6 +79,8 @@ class PaperCollector:
             return 'lancet'
         elif 'jamanetwork.com' in url_lower:
             return 'jama'
+        elif 'bmj.com' in url_lower:
+            return 'bmj'
         else:
             return 'generic'
 
@@ -90,8 +92,15 @@ class PaperCollector:
     ) -> Optional[Dict[str, Any]]:
         """Parse a single RSS entry with journal-specific logic."""
         
-        # Parse publication date
-        pub_date_str = entry.get("published", "") or entry.get("updated", "")
+        # Parse publication date - check multiple possible date fields
+        pub_date_str = (
+            entry.get("published", "") or 
+            entry.get("updated", "") or
+            entry.get("dc_date", "") or  # BMJ uses dc:date
+            entry.get("prism_publicationdate", "") or  # Lancet uses prism:publicationDate
+            entry.get("pubDate", "") or  # JAMA standard
+            ""
+        )
         pub_date = None
         
         if pub_date_str:
@@ -100,6 +109,7 @@ class PaperCollector:
                 if pub_date.replace(tzinfo=None) < cutoff_date:
                     return None
             except Exception:
+                # If date parsing fails, include the paper anyway (no date filter)
                 pass
 
         # Extract title

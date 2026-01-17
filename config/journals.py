@@ -44,7 +44,12 @@ JOURNALS = [
         "url": "https://jamanetwork.com/rss/site_3/67.xml",
         "category": "General Medical"
     },
-    # Note: BMJ and Annals of Internal Medicine RSS feeds have been deprecated
+    {
+        "name": "The BMJ",
+        "url": "https://www.bmj.com/rss/recent.xml",
+        "category": "General Medical"
+    },
+    # Note: Annals of Internal Medicine RSS feeds have been deprecated
     # These journals may need alternative data sources in the future
 ]
 
