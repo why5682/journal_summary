@@ -310,12 +310,24 @@ def main():
     
     # Multiselect
     journal_names = get_journal_names()
-    default_selection = ["Pharmacoepidemiology and Drug Safety"]
+    
+    # Initialize session state for journals if not present
+    if 'selected_msg_journals' not in st.session_state:
+        st.session_state.selected_msg_journals = ["Pharmacoepidemiology and Drug Safety"]
+        
+    # Select/Deselect Buttons
+    col1, col2, _ = st.columns([0.2, 0.2, 0.6])
+    if col1.button("✅ Select All"):
+        st.session_state.selected_msg_journals = journal_names
+        st.rerun()
+    if col2.button("❌ Deselect All"):
+        st.session_state.selected_msg_journals = []
+        st.rerun()
     
     selected_journal_names = st.multiselect(
         "Choose one or more journals",
         options=journal_names,
-        default=[n for n in default_selection if n in journal_names],
+        key="selected_msg_journals",
         help="Select multiple journals to analyze"
     )
     
