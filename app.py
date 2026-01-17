@@ -223,18 +223,18 @@ def main():
             st.info("Testing connection to JAMA...")
             try:
                 import requests
+                import cloudscraper
                 # Test 1: Direct Request
                 url = "https://jamanetwork.com/rss/site_3/latestIssue_67.xml"
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
                 }
                 
-                # Step 1: Visit Home
-                s = requests.Session()
+                # Step 1: Visit Home with Scraper
+                s = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
                 s.headers.update(headers)
                 try:
-                    home = s.get("https://jamanetwork.com/journals/jama", timeout=5)
+                    home = s.get("https://jamanetwork.com/journals/jama", timeout=10)
                     st.write(f"1. Home Page Access: {home.status_code}")
                 except Exception as e:
                     st.write(f"1. Home Page Access: Failed ({str(e)})")

@@ -5,6 +5,7 @@ Includes journal-specific parsing and HTML cleanup.
 """
 import feedparser
 import requests
+import cloudscraper
 import logging
 import re
 import html
@@ -19,9 +20,15 @@ class PaperCollector:
     """Handles fetching and parsing of RSS feeds with journal-specific logic."""
 
     def __init__(self, user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"):
-        self.session = requests.Session()
+        # Use cloudscraper to bypass Cloudflare protection (JAMA uses it)
+        self.scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'mobile': False
+            }
+        )
         self.headers = {
-            'User-Agent': user_agent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive',
@@ -29,7 +36,7 @@ class PaperCollector:
             'Cache-Control': 'max-age=0',
             'Referer': 'https://jamanetwork.com/journals/jama',
         }
-        self.session.headers.update(self.headers)
+        self.scraper.headers.update(self.headers)
         self.user_agent = user_agent
 
     def fetch_papers(
@@ -48,12 +55,12 @@ class PaperCollector:
             # Special handling for JAMA: Visit homepage first to set cookies
             if 'jamanetwork.com' in url:
                 try:
-                    self.session.get('https://jamanetwork.com/journals/jama', timeout=5)
+                    self.scraper.get('https://jamanetwork.com/journals/jama', timeout=5)
                 except Exception:
                     pass
 
             # Use requests session to fetch feed content (handles cookies/headers)
-            response = self.session.get(
+            response = self.scraper.get(
                 url, 
                 timeout=10
             )
